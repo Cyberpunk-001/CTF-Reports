@@ -1,5 +1,5 @@
 Creative -- Tryhackme -- 20 Nov 2024 -- 1hr 20min
-
+https://tryhackme.com/r/room/creative
 
 ---- Enumeration
 
@@ -222,5 +222,3 @@ root.txt  snap
 992bfd94b90da48634aed182aae7b99f
 
 Found root.txt
-
-
