@@ -53,11 +53,8 @@ Host script results:
 |_  start_date: N/A
 
 Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
-Nmap done: 1 IP address (1 host up) scanned in 165.26 seconds
-                                                                                                                                                               
-┌──(kali㉿kali)-[~]
-└─$ 
-                                                                                                                                                               
+Nmap done: 1 IP address (1 host up) scanned in 165.26 seconds                                                                                                                                                       
+
 Add WIN-12OUO7A66M7.thm.local to /etc/hosts
 
 ---- Website 
@@ -105,6 +102,7 @@ BitlockerActiveMonitoringLogs') ; dir #('
 BitlockerActiveMonitoringLogs') ; type C:\Users\dev\Desktop\user.txt #('
 
 I got user flag
+THM{Stop_Reading_Start_Doing}
 
 Then see an Interesting todo list
 BitlockerActiveMonitoringLogs') ; type C:\Users\dev\Desktop\TODO.txt #('
@@ -220,5 +218,5 @@ msf6 exploit(windows/http/exchange_proxyshell_rce) >
 
 I tried all but not work I do not know what is this remain lets try after some time
 
-New Topics - Powershell Injection 
-                                                                                                         
+New Topics to learn - Powershell Injection
+
