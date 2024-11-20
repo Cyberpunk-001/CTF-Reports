@@ -1,4 +1,4 @@
-Lookback -- Tryhackme -- 20 Nov 2024 -- 
+Lookback -- Tryhackme -- 20 Nov 2024 -- 1hr 50min
 
 Add lookback.thm to /etc/hosts
 
