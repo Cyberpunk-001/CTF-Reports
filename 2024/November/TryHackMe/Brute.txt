@@ -1,4 +1,4 @@
-Brute -- Tryhackme -- 22 Nov 2024 -- Medium -- 2hr 20 min
+Brute -- Tryhackme -- Medium -- 22 Nov 2024 -- 2hr 20 min
 
 ---- Recon
 
