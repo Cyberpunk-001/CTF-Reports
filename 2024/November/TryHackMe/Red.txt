@@ -1,4 +1,4 @@
-Red -- Tryhackme -- Medium -- 23-Nov-2024 -- 1hr
+Red -- Tryhackme -- Medium -- 23 Nov 2024 -- 1hr
 
 ---- Recon
 
