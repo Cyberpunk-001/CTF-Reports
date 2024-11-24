@@ -1,4 +1,4 @@
-Creative -- Tryhackme -- 20 Nov 2024 -- Easy -- 1hr 20min
+Creative -- Tryhackme -- Easy -- 20 Nov 2024 -- 1hr 20min
 
 ---- Enumeration
 
