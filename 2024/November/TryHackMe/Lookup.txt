@@ -1,4 +1,4 @@
-Lookup -- Tryhackme -- Easy -- 24 Nov 2024 -- 2hr 5min
+Lookup -- Tryhackme -- 24 Nov 2024 -- Easy -- 2hr 5min
 
 ---- Recon
 
