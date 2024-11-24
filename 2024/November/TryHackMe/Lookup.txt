@@ -439,7 +439,7 @@ root@lookup:~# wc root.txt
 root@lookup:~# wc -c root.txt 
 33 root.txt 
 
-Mistake - I ask binary exploit to senior becuase writeup is not available -- TOtal mistake is I have to learn binary exploitation
+Mistake - I ask binary exploit to senior becuase writeup is not available -- Total mistake is I have to learn binary exploitation
 
     
                                                                                                                           
